@@ -4,332 +4,221 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>xsukax Markdown Viewer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.2/marked.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mermaid/10.9.1/mermaid.min.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css" id="highlight-light">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css" id="highlight-dark" disabled>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css">
     <style>
-        :root {
-            --bg-primary: #ffffff;
-            --bg-secondary: #fafafa;
-            --bg-tertiary: #f0f0f0;
-            --text-primary: #1d1d1f;
-            --text-secondary: #86868b;
-            --text-accent: #007aff;
-            --text-success: #34c759;
-            --text-error: #ff3b30;
-            --text-warning: #ff9500;
-            --border-color: #e5e5e7;
-            --shadow-light: rgba(0, 0, 0, 0.05);
-            --shadow-medium: rgba(0, 0, 0, 0.1);
-            --shadow-heavy: rgba(0, 0, 0, 0.15);
-            --code-bg: var(--bg-primary);
-            --quote-bg: rgba(0, 122, 255, 0.08);
-            --input-bg: #ffffff;
-            --header-blur: rgba(255, 255, 255, 0.85);
-        }
-        
-        [data-theme="dark"] {
-            --bg-primary: #000000;
-            --bg-secondary: #0a0a0a;
-            --bg-tertiary: #1a1a1a;
-            --text-primary: #ffffff;
-            --text-secondary: #8e8e93;
-            --text-accent: #0a84ff;
-            --text-success: #30d158;
-            --text-error: #ff453a;
-            --text-warning: #ff9f0a;
-            --border-color: #2c2c2e;
-            --shadow-light: rgba(255, 255, 255, 0.05);
-            --shadow-medium: rgba(255, 255, 255, 0.08);
-            --shadow-heavy: rgba(255, 255, 255, 0.12);
-            --code-bg: var(--bg-primary);
-            --quote-bg: rgba(10, 132, 255, 0.12);
-            --input-bg: #1c1c1e;
-            --header-blur: rgba(0, 0, 0, 0.85);
-        }
-        
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; background: var(--bg-primary); color: var(--text-primary); min-height: 100vh; transition: all 0.3s ease; }
-        .app-container { min-height: 100vh; display: flex; flex-direction: column; }
-        .app-header { background: var(--header-blur); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-bottom: 1px solid var(--border-color); padding: 12px 16px; position: sticky; top: 0; z-index: 100; display: flex; align-items: center; justify-content: space-between; min-height: 60px; }
-        .brand-section { display: flex; align-items: center; gap: 8px; flex: 1; }
-        .brand-icon { width: 28px; height: 28px; background: linear-gradient(135deg, var(--text-accent), #5856d6); border-radius: 7px; display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; font-size: 14px; flex-shrink: 0; }
-        .brand-text { font-size: 17px; font-weight: 600; color: var(--text-primary); letter-spacing: -0.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .theme-toggle-wrapper { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
-        .theme-icon { font-size: 16px; color: var(--text-secondary); transition: color 0.2s ease; user-select: none; }
-        .theme-icon.active { color: var(--text-accent); }
-        .theme-toggle { position: relative; width: 40px; height: 24px; flex-shrink: 0; }
-        .theme-toggle input { opacity: 0; width: 0; height: 0; }
-        .theme-slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background: var(--bg-tertiary); transition: 0.3s; border-radius: 12px; border: 1px solid var(--border-color); }
-        .theme-slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 2px; bottom: 2px; background: white; transition: 0.3s; border-radius: 50%; box-shadow: 0 1px 3px var(--shadow-light); }
-        .theme-toggle input:checked + .theme-slider { background: var(--text-accent); border-color: var(--text-accent); }
-        .theme-toggle input:checked + .theme-slider:before { transform: translateX(16px); }
-        .main-content { flex: 1; padding: 20px 16px; max-width: 1000px; margin: 0 auto; width: 100%; }
-        .upload-area { background: var(--input-bg); border: 2px dashed var(--border-color); border-radius: 12px; padding: 32px 20px; text-align: center; margin-bottom: 24px; transition: all 0.3s ease; cursor: pointer; }
-        .upload-area:hover { border-color: var(--text-accent); background: var(--quote-bg); }
-        .upload-area.dragover { border-color: var(--text-accent); background: var(--quote-bg); transform: scale(1.01); }
-        .upload-icon { font-size: 40px; margin-bottom: 12px; color: var(--text-secondary); }
-        .file-input { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
-        .upload-label { color: var(--text-primary); font-size: 16px; font-weight: 500; display: block; cursor: pointer; margin-bottom: 6px; }
-        .upload-subtitle { color: var(--text-secondary); font-size: 13px; line-height: 1.4; }
-        .file-info { color: var(--text-accent); margin-top: 12px; font-size: 14px; font-weight: 500; word-break: break-all; }
-        .content-wrapper { background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 12px; padding: 24px; min-height: 400px; box-shadow: 0 2px 8px var(--shadow-light); }
-        .markdown-content { line-height: 1.6; color: var(--text-primary); font-size: 15px; word-wrap: break-word; }
-        .markdown-content h1, .markdown-content h2, .markdown-content h3, .markdown-content h4, .markdown-content h5, .markdown-content h6 { color: var(--text-primary); margin: 24px 0 12px 0; font-weight: 600; letter-spacing: -0.01em; line-height: 1.3; }
-        .markdown-content h1 { font-size: 2.2em; margin-bottom: 16px; }
-        .markdown-content h2 { font-size: 1.8em; margin-bottom: 14px; }
-        .markdown-content h3 { font-size: 1.4em; }
-        .markdown-content h4 { font-size: 1.2em; }
-        .markdown-content p { margin: 12px 0; }
-        .markdown-content ul, .markdown-content ol { margin: 12px 0; padding-left: 20px; }
-        .markdown-content li { margin: 4px 0; }
-        .markdown-content blockquote { border-left: 3px solid var(--text-accent); padding-left: 16px; margin: 20px 0; color: var(--text-secondary); background: var(--quote-bg); padding: 16px; border-radius: 0 8px 8px 0; font-style: italic; }
-        .markdown-content code { background: var(--bg-tertiary); color: var(--text-primary); padding: 2px 4px; border-radius: 4px; font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', monospace; font-size: 0.9em; border: 1px solid var(--border-color); }
-        .markdown-content pre { background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: 8px; padding: 16px; margin: 16px 0; overflow-x: auto; font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', monospace; }
-        .markdown-content pre code { background: none; padding: 0; border-radius: 0; border: none; color: var(--text-primary); }
-        .markdown-content table { border-collapse: collapse; width: 100%; margin: 20px 0; border-radius: 8px; overflow: hidden; border: 1px solid var(--border-color); }
-        .markdown-content th, .markdown-content td { border: 1px solid var(--border-color); padding: 10px 12px; text-align: left; }
-        .markdown-content th { background: var(--bg-tertiary); color: var(--text-primary); font-weight: 600; }
-        .markdown-content a { color: var(--text-accent); text-decoration: none; font-weight: 500; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif; }
+        .tab-active { border-bottom: 2px solid #fd8c73; color: #24292f; font-weight: 600; }
+        .tab-inactive { border-bottom: 2px solid transparent; color: #57606a; }
+        .tab-inactive:hover { color: #24292f; border-bottom-color: #d0d7de; }
+        .upload-zone:hover { border-color: #0969da; background-color: #ddf4ff; }
+        .upload-zone.dragover { border-color: #0969da; background-color: #ddf4ff; transform: scale(1.01); }
+        .markdown-content h1 { font-size: 2em; font-weight: 600; padding-bottom: 0.3em; border-bottom: 1px solid #d0d7de; margin-top: 24px; margin-bottom: 16px; }
+        .markdown-content h2 { font-size: 1.5em; font-weight: 600; padding-bottom: 0.3em; border-bottom: 1px solid #d0d7de; margin-top: 24px; margin-bottom: 16px; }
+        .markdown-content h3 { font-size: 1.25em; font-weight: 600; margin-top: 24px; margin-bottom: 16px; }
+        .markdown-content h4 { font-size: 1em; font-weight: 600; margin-top: 24px; margin-bottom: 16px; }
+        .markdown-content h5 { font-size: 0.875em; font-weight: 600; margin-top: 24px; margin-bottom: 16px; }
+        .markdown-content h6 { font-size: 0.85em; font-weight: 600; color: #57606a; margin-top: 24px; margin-bottom: 16px; }
+        .markdown-content p { margin-top: 0; margin-bottom: 16px; }
+        .markdown-content ul, .markdown-content ol { padding-left: 2em; margin-top: 0; margin-bottom: 16px; }
+        .markdown-content li { margin-top: 0.25em; }
+        .markdown-content li + li { margin-top: 0.25em; }
+        .markdown-content blockquote { padding: 0 1em; color: #57606a; border-left: 0.25em solid #d0d7de; margin: 0 0 16px 0; }
+        .markdown-content blockquote > :first-child { margin-top: 0; }
+        .markdown-content blockquote > :last-child { margin-bottom: 0; }
+        .markdown-content code { padding: 0.2em 0.4em; margin: 0; font-size: 85%; background-color: rgba(175,184,193,0.2); border-radius: 6px; font-family: ui-monospace, SFMono-Regular, SF Mono, Menlo, Consolas, Liberation Mono, monospace; }
+        .markdown-content pre { padding: 16px; overflow: auto; font-size: 85%; line-height: 1.45; background-color: #f6f8fa; border-radius: 6px; margin-bottom: 16px; }
+        .markdown-content pre code { display: inline; max-width: auto; padding: 0; margin: 0; overflow: visible; line-height: inherit; word-wrap: normal; background-color: transparent; border: 0; }
+        .markdown-content table { border-spacing: 0; border-collapse: collapse; margin-top: 0; margin-bottom: 16px; display: block; width: max-content; max-width: 100%; overflow: auto; }
+        .markdown-content table tr { background-color: #ffffff; border-top: 1px solid #d0d7de; }
+        .markdown-content table tr:nth-child(2n) { background-color: #f6f8fa; }
+        .markdown-content table th { padding: 6px 13px; border: 1px solid #d0d7de; font-weight: 600; }
+        .markdown-content table td { padding: 6px 13px; border: 1px solid #d0d7de; }
+        .markdown-content a { color: #0969da; text-decoration: none; }
         .markdown-content a:hover { text-decoration: underline; }
-        .markdown-content img { max-width: 100%; height: auto; border-radius: 8px; margin: 16px 0; display: block; }
-        .markdown-content hr { border: none; height: 1px; background: var(--border-color); margin: 24px 0; }
-        .mermaid-wrapper { background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: 8px; padding: 20px; margin: 20px 0; text-align: center; overflow-x: auto; }
-        .mermaid-wrapper .mermaid { background: transparent !important; }
-        .mermaid-wrapper svg { max-width: 100%; height: auto; }
-        .mermaid-error { background: rgba(255, 59, 48, 0.1); border: 1px solid var(--text-error); color: var(--text-error); padding: 16px; border-radius: 8px; margin: 20px 0; font-size: 14px; }
-        .status-bar { background: var(--header-blur); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-top: 1px solid var(--border-color); padding: 12px 16px; font-size: 13px; color: var(--text-secondary); display: flex; justify-content: space-between; align-items: center; }
-        .status-text { display: flex; align-items: center; gap: 6px; }
-        .status-indicator { width: 6px; height: 6px; border-radius: 50%; background: var(--text-success); flex-shrink: 0; }
-        .feature-badges { display: flex; gap: 6px; }
-        .badge { background: var(--bg-tertiary); color: var(--text-secondary); padding: 3px 6px; border-radius: 8px; font-size: 11px; font-weight: 500; }
-        .loading { color: var(--text-accent); }
-        .loading .status-indicator { background: var(--text-accent); animation: pulse 1.5s infinite; }
-        .error { color: var(--text-error); }
-        .error .status-indicator { background: var(--text-error); }
-        .success { color: var(--text-success); }
-        .success .status-indicator { background: var(--text-success); }
-        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
-        @media (max-width: 768px) { .app-header { padding: 10px 12px; min-height: 56px; } .brand-text { font-size: 16px; max-width: 180px; } .brand-icon { width: 26px; height: 26px; font-size: 13px; } .main-content { padding: 16px 12px; } .content-wrapper { padding: 20px 16px; } .upload-area { padding: 24px 16px; } .markdown-content { font-size: 14px; } .markdown-content h1 { font-size: 2em; } .markdown-content h2 { font-size: 1.6em; } .markdown-content h3 { font-size: 1.3em; } .markdown-content pre { padding: 12px; overflow-x: scroll; } .mermaid-wrapper { padding: 16px; } .status-bar { padding: 10px 12px; flex-direction: column; gap: 8px; align-items: flex-start; } .feature-badges { align-self: flex-end; } }
-        @media (max-width: 480px) { .app-header { padding: 8px 10px; min-height: 52px; } .brand-text { font-size: 15px; max-width: 140px; } .brand-icon { width: 24px; height: 24px; font-size: 12px; } .theme-toggle { width: 36px; height: 22px; } .theme-toggle-wrapper { gap: 4px; } .theme-icon { font-size: 14px; } .main-content { padding: 12px 8px; } .upload-area { padding: 20px 12px; } .upload-icon { font-size: 36px; margin-bottom: 10px; } .upload-label { font-size: 15px; } .upload-subtitle { font-size: 12px; } .content-wrapper { padding: 16px 12px; } .markdown-content { font-size: 13px; } .markdown-content h1 { font-size: 1.8em; } .markdown-content h2 { font-size: 1.5em; } .markdown-content h3 { font-size: 1.25em; } .markdown-content pre { padding: 10px; font-size: 12px; } .mermaid-wrapper { padding: 12px; } .badge { display: none; } }
-        @media (max-width: 320px) { .brand-text { max-width: 100px; } .markdown-content pre { font-size: 11px; } }
+        .markdown-content img { max-width: 100%; box-sizing: content-box; background-color: #ffffff; border-radius: 6px; }
+        .markdown-content hr { height: 0.25em; padding: 0; margin: 24px 0; background-color: #d0d7de; border: 0; }
+        .notification { position: fixed; top: 16px; right: 16px; z-index: 1000; transform: translateX(400px); transition: transform 0.3s ease-in-out; max-width: 320px; }
+        .notification.show { transform: translateX(0); }
+        .mermaid-wrapper { background: #ffffff; border: 1px solid #d0d7de; border-radius: 6px; padding: 16px; margin: 16px 0; text-align: center; overflow-x: auto; }
+        @media (max-width: 768px) { .notification { max-width: calc(100vw - 32px); } }
     </style>
 </head>
-<body data-theme="light">
-    <div class="app-container">
-        <header class="app-header">
-            <div class="brand-section">
-                <div class="brand-icon">x</div>
-                <div class="brand-text">xsukax Markdown Viewer</div>
-            </div>
-            <div class="theme-toggle-wrapper">
-                <span class="theme-icon active" id="lightIcon">☀️</span>
-                <label class="theme-toggle">
-                    <input type="checkbox" id="themeToggle">
-                    <span class="theme-slider"></span>
-                </label>
-                <span class="theme-icon" id="darkIcon">🌙</span>
+<body class="bg-white">
+    <div id="notification" class="notification"></div>
+    
+    <div class="min-h-screen flex flex-col">
+        <header class="bg-[#24292f] border-b border-[#d0d7de]">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center text-white font-bold text-sm">X</div>
+                        <h1 class="text-white text-lg font-semibold">xsukax Markdown Viewer</h1>
+                    </div>
+                    <div class="flex items-center gap-2 text-xs text-gray-400">
+                        <span class="hidden sm:inline">Mermaid v10.9.1</span>
+                        <span class="hidden md:inline">•</span>
+                        <span class="hidden md:inline">GitHub Design</span>
+                    </div>
+                </div>
             </div>
         </header>
-        
-        <main class="main-content">
-            <div class="upload-area" id="uploadArea">
-                <div class="upload-icon">📄</div>
-                <label for="fileInput" class="upload-label">
-                    Drop markdown file here or tap to browse
-                </label>
-                <div class="upload-subtitle">
-                    Supports .md and .markdown files with Mermaid diagrams
+
+        <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+            <div class="bg-white border border-[#d0d7de] rounded-lg shadow-sm">
+                <div class="border-b border-[#d0d7de]">
+                    <nav class="flex gap-4 px-6" aria-label="Tabs">
+                        <button id="uploadTab" class="tab-active py-3 px-1 text-sm transition-all" onclick="switchTab('upload')">
+                            📁 Upload File
+                        </button>
+                        <button id="pasteTab" class="tab-inactive py-3 px-1 text-sm transition-all" onclick="switchTab('paste')">
+                            ✏️ Paste Markdown
+                        </button>
+                    </nav>
                 </div>
-                <input type="file" id="fileInput" class="file-input" accept=".md,.markdown">
-                <div class="file-info" id="fileInfo"></div>
+
+                <div id="uploadSection" class="p-6">
+                    <div id="uploadArea" class="upload-zone border-2 border-dashed border-[#d0d7de] rounded-lg p-12 text-center cursor-pointer transition-all">
+                        <div class="text-6xl mb-4">📄</div>
+                        <label for="fileInput" class="block text-base font-semibold text-[#24292f] mb-2 cursor-pointer">
+                            Drop markdown file here or click to browse
+                        </label>
+                        <p class="text-sm text-[#57606a] mb-4">Supports .md and .markdown files with Mermaid diagrams</p>
+                        <input type="file" id="fileInput" class="hidden" accept=".md,.markdown">
+                        <div id="fileInfo" class="text-sm text-[#0969da] font-medium mt-3"></div>
+                    </div>
+                </div>
+
+                <div id="pasteSection" class="p-6 hidden">
+                    <div class="space-y-4">
+                        <div>
+                            <label for="markdownInput" class="block text-sm font-semibold text-[#24292f] mb-2">
+                                Paste your markdown content below
+                            </label>
+                            <textarea 
+                                id="markdownInput" 
+                                rows="12" 
+                                class="w-full px-3 py-2 border border-[#d0d7de] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0969da] focus:border-transparent font-mono text-sm resize-y"
+                                placeholder="# Your Markdown Here
+
+Start typing or paste your markdown content...
+
+```mermaid
+graph TD
+    A[Start] --> B[Process]
+    B --> C[End]
+```"></textarea>
+                        </div>
+                        <div class="flex gap-3">
+                            <button 
+                                onclick="renderPastedMarkdown()" 
+                                class="flex-1 sm:flex-none px-4 py-2 bg-[#2da44e] text-white text-sm font-medium rounded-lg hover:bg-[#2c974b] focus:outline-none focus:ring-2 focus:ring-[#2da44e] focus:ring-offset-2 transition-colors">
+                                ✨ Render Markdown
+                            </button>
+                            <button 
+                                onclick="clearMarkdownInput()" 
+                                class="px-4 py-2 bg-white text-[#24292f] text-sm font-medium rounded-lg border border-[#d0d7de] hover:bg-[#f6f8fa] focus:outline-none focus:ring-2 focus:ring-[#d0d7de] focus:ring-offset-2 transition-colors">
+                                🗑️ Clear
+                            </button>
+                        </div>
+                    </div>
+                </div>
             </div>
-            
-            <div class="content-wrapper">
-                <div class="markdown-content" id="markdownContent">
-                    <h1>Welcome to xsukax Markdown Viewer</h1>
-                    <p>A beautiful, modern markdown viewer with advanced features and Apple-inspired design.</p>
-                    <blockquote>
-                        <strong>Features at a glance:</strong><br><br>
-                        ✨ Clean, Apple-inspired interface<br>
-                        📖 Full markdown support with syntax highlighting<br>
-                        📊 Interactive Mermaid diagrams<br>
-                        🌓 Seamless light/dark theme switching<br>
-                        📱 Mobile-first responsive design<br>
-                        🚀 Lightning-fast performance
-                    </blockquote>
-                    
-                    <h2>Mermaid Diagram Preview</h2>
-                    <p>Experience beautiful diagram rendering that adapts to your chosen theme:</p>
-                    <div class="mermaid-wrapper">
-                        <div class="mermaid" data-mermaid-source="flowchart TD
-    A[📄 Select File] --> B{Mermaid Content?}
-    B -->|Yes| C[🎨 Render Diagrams]
-    B -->|No| D[📝 Parse Markdown]
-    C --> E[✨ Display Content]
-    D --> E
-    E --> F[🌓 Toggle Theme]
-    F --> G[🎉 Enjoy!]
+
+            <div class="mt-6 bg-white border border-[#d0d7de] rounded-lg shadow-sm">
+                <div class="border-b border-[#d0d7de] px-6 py-3">
+                    <h2 class="text-sm font-semibold text-[#24292f]">Preview</h2>
+                </div>
+                <div class="p-6">
+                    <div id="markdownContent" class="markdown-content text-[#24292f]">
+                        <h1>Welcome to xsukax Markdown Viewer</h1>
+                        <p>A modern markdown viewer with GitHub-inspired design and advanced features.</p>
+                        
+                        <blockquote>
+                            <p><strong>Features at a glance:</strong></p>
+                            <ul>
+                                <li>📁 Upload markdown files or paste content directly</li>
+                                <li>📖 Full markdown support with syntax highlighting</li>
+                                <li>📊 Interactive Mermaid diagrams</li>
+                                <li>🎨 Clean GitHub-inspired interface</li>
+                                <li>📱 Mobile-first responsive design</li>
+                                <li>⚡ Lightning-fast performance</li>
+                            </ul>
+                        </blockquote>
+                        
+                        <h2>Getting Started</h2>
+                        <p>Choose your preferred method:</p>
+                        <ol>
+                            <li><strong>Upload File:</strong> Drag and drop or browse for a .md file</li>
+                            <li><strong>Paste Markdown:</strong> Copy and paste your markdown content directly</li>
+                        </ol>
+                        
+                        <h2>Mermaid Diagram Example</h2>
+                        <p>Experience beautiful diagram rendering:</p>
+                        <div class="mermaid-wrapper">
+                            <div class="mermaid" data-mermaid-source="flowchart%20LR%0A%20%20%20%20A%5BUpload%20File%5D%20--%3E%20C%7BProcess%7D%0A%20%20%20%20B%5BPaste%20Markdown%5D%20--%3E%20C%0A%20%20%20%20C%20--%3E%20D%5BRender%20Diagrams%5D%0A%20%20%20%20C%20--%3E%20E%5BParse%20Markdown%5D%0A%20%20%20%20D%20--%3E%20F%5BDisplay%20Content%5D%0A%20%20%20%20E%20--%3E%20F%0A%20%20%20%20F%20--%3E%20G%5BEnjoy!%5D%0A%20%20%20%20%0A%20%20%20%20style%20A%20fill%3A%230969da%2Cstroke%3A%23fff%2Cstroke-width%3A2px%2Ccolor%3A%23fff%0A%20%20%20%20style%20B%20fill%3A%230969da%2Cstroke%3A%23fff%2Cstroke-width%3A2px%2Ccolor%3A%23fff%0A%20%20%20%20style%20G%20fill%3A%232da44e%2Cstroke%3A%23fff%2Cstroke-width%3A2px%2Ccolor%3A%23fff">flowchart LR
+    A[Upload File] --> C{Process}
+    B[Paste Markdown] --> C
+    C --> D[Render Diagrams]
+    C --> E[Parse Markdown]
+    D --> F[Display Content]
+    E --> F
+    F --> G[Enjoy!]
     
-    style A fill:#007aff,stroke:#fff,stroke-width:2px,color:#fff
-    style G fill:#34c759,stroke:#fff,stroke-width:2px,color:#fff
-    style F fill:#ff9500,stroke:#fff,stroke-width:2px,color:#fff">
-                            flowchart TD
-                                A[📄 Select File] --> B{Mermaid Content?}
-                                B -->|Yes| C[🎨 Render Diagrams]
-                                B -->|No| D[📝 Parse Markdown]
-                                C --> E[✨ Display Content]
-                                D --> E
-                                E --> F[🌓 Toggle Theme]
-                                F --> G[🎉 Enjoy!]
-                                
-                                style A fill:#007aff,stroke:#fff,stroke-width:2px,color:#fff
-                                style G fill:#34c759,stroke:#fff,stroke-width:2px,color:#fff
-                                style F fill:#ff9500,stroke:#fff,stroke-width:2px,color:#fff
+    style A fill:#0969da,stroke:#fff,stroke-width:2px,color:#fff
+    style B fill:#0969da,stroke:#fff,stroke-width:2px,color:#fff
+    style G fill:#2da44e,stroke:#fff,stroke-width:2px,color:#fff</div>
                         </div>
                     </div>
                 </div>
             </div>
         </main>
-        
-        <footer class="status-bar">
-            <div class="status-text">
-                <div class="status-indicator"></div>
-                <span id="statusText">Ready to load markdown files</span>
-            </div>
-            <div class="feature-badges">
-                <span class="badge">Mermaid v10.9.1</span>
-                <span class="badge">Apple Design</span>
+
+        <footer class="bg-[#f6f8fa] border-t border-[#d0d7de] mt-auto">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+                <div class="flex flex-col sm:flex-row items-center justify-between gap-3 text-sm text-[#57606a]">
+                    <div class="flex items-center gap-2">
+                        <div class="w-2 h-2 rounded-full bg-[#2da44e]"></div>
+                        <span id="statusText">Ready to load markdown files</span>
+                    </div>
+                    <div class="text-xs">Built with ❤️ by xsukax</div>
+                </div>
             </div>
         </footer>
     </div>
 
     <script>
-        // Global storage for mermaid diagram codes
         let mermaidDiagrams = new Map();
-        
-        // Theme management
-        let currentTheme = 'light';
-        const themeToggle = document.getElementById('themeToggle');
-        const body = document.body;
-        const darkIcon = document.getElementById('darkIcon');
-        const lightIcon = document.getElementById('lightIcon');
-        const hlDark = document.getElementById('highlight-dark');
-        const hlLight = document.getElementById('highlight-light');
-
-        // Mermaid configurations for both themes
-        const mermaidConfigs = {
-            light: {
-                startOnLoad: false,
-                theme: 'base',
-                themeVariables: {
-                    primaryColor: '#007aff',
-                    primaryTextColor: '#1d1d1f',
-                    primaryBorderColor: '#007aff',
-                    lineColor: '#8e8e93',
-                    secondaryColor: '#fafafa',
-                    tertiaryColor: '#f0f0f0',
-                    background: '#ffffff',
-                    mainBkg: '#ffffff',
-                    secondBkg: '#fafafa',
-                    tertiaryBkg: '#f0f0f0',
-                    darkMode: false,
-                    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif'
-                },
-                fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif',
-                securityLevel: 'loose',
-                flowchart: {
-                    nodeSpacing: 50,
-                    rankSpacing: 50,
-                    curve: 'basis'
-                }
-            },
-            dark: {
-                startOnLoad: false,
-                theme: 'dark',
-                themeVariables: {
-                    primaryColor: '#0a84ff',
-                    primaryTextColor: '#ffffff',
-                    primaryBorderColor: '#0a84ff',
-                    lineColor: '#8e8e93',
-                    secondaryColor: '#0a0a0a',
-                    tertiaryColor: '#1a1a1a',
-                    background: '#000000',
-                    mainBkg: '#0a0a0a',
-                    secondBkg: '#000000',
-                    tertiaryBkg: '#1a1a1a',
-                    darkMode: true,
-                    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif'
-                },
-                fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif',
-                securityLevel: 'loose',
-                flowchart: {
-                    nodeSpacing: 50,
-                    rankSpacing: 50,
-                    curve: 'basis'
-                }
-            }
-        };
-
-        // Initialize Mermaid with light theme
-        mermaid.initialize(mermaidConfigs.light);
-
-        // Theme switching function
-        function switchTheme(theme) {
-            currentTheme = theme;
-            body.setAttribute('data-theme', theme);
-            
-            // Update toggle state
-            themeToggle.checked = theme === 'dark';
-            
-            // Update icons
-            darkIcon.classList.toggle('active', theme === 'dark');
-            lightIcon.classList.toggle('active', theme === 'light');
-            
-            // Switch highlight.js themes
-            if (theme === 'dark') {
-                hlLight.disabled = true;
-                hlDark.disabled = false;
-            } else {
-                hlLight.disabled = false;
-                hlDark.disabled = true;
-            }
-            
-            // Reinitialize Mermaid with new theme
-            mermaid.initialize(mermaidConfigs[theme]);
-            
-            // Re-render existing diagrams
-            setTimeout(() => {
-                processMermaidDiagrams();
-            }, 100);
-        }
-
-        // Theme toggle event listener
-        themeToggle.addEventListener('change', function() {
-            const newTheme = this.checked ? 'dark' : 'light';
-            switchTheme(newTheme);
-        });
-
-        // Custom renderer for mermaid code blocks
-        const renderer = new marked.Renderer();
         let mermaidCounter = 0;
 
+        mermaid.initialize({
+            startOnLoad: false,
+            theme: 'neutral',
+            themeVariables: {
+                primaryColor: '#0969da',
+                primaryTextColor: '#24292f',
+                primaryBorderColor: '#0969da',
+                lineColor: '#57606a',
+                secondaryColor: '#f6f8fa',
+                tertiaryColor: '#ffffff',
+                fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif'
+            },
+            securityLevel: 'loose',
+            flowchart: { nodeSpacing: 50, rankSpacing: 50, curve: 'basis' }
+        });
+
+        const renderer = new marked.Renderer();
         renderer.code = function(code, language) {
             if (language === 'mermaid') {
                 mermaidCounter++;
                 const id = `mermaid-${mermaidCounter}`;
-                
-                // Store the original mermaid code
                 mermaidDiagrams.set(id, code.trim());
-                
-                // Return container that will be processed later
-                return `<div class="mermaid-wrapper">
-                    <div class="mermaid" id="${id}" data-mermaid-source="${encodeURIComponent(code.trim())}">${code.trim()}</div>
-                </div>`;
+                return `<div class="mermaid-wrapper"><div class="mermaid" id="${id}" data-mermaid-source="${encodeURIComponent(code.trim())}">${code.trim()}</div></div>`;
             } else {
-                // Use default highlighting for other code blocks
                 if (language && hljs.getLanguage(language)) {
                     try {
                         const highlighted = hljs.highlight(code, { language }).value;
@@ -344,33 +233,74 @@
             }
         };
 
-        // Configure marked with custom renderer
-        marked.setOptions({
-            renderer: renderer,
-            breaks: true,
-            gfm: true
-        });
+        marked.setOptions({ renderer: renderer, breaks: true, gfm: true });
 
-        const fileInput = document.getElementById('fileInput');
-        const uploadArea = document.getElementById('uploadArea');
-        const fileInfo = document.getElementById('fileInfo');
-        const markdownContent = document.getElementById('markdownContent');
-        const statusText = document.getElementById('statusText');
+        function showNotification(message, type = 'info') {
+            const colors = {
+                success: 'bg-[#dafbe1] border-[#2da44e] text-[#1a7f37]',
+                error: 'bg-[#ffebe9] border-[#cf222e] text-[#a40e26]',
+                info: 'bg-[#ddf4ff] border-[#0969da] text-[#0550ae]',
+                warning: 'bg-[#fff8c5] border-[#bf8700] text-[#7d4e00]'
+            };
+            
+            const icons = {
+                success: '✅',
+                error: '❌',
+                info: 'ℹ️',
+                warning: '⚠️'
+            };
 
-        // Update status message
-        function updateStatus(message, type = '') {
-            statusText.textContent = message;
-            statusText.parentElement.className = `status-text ${type}`;
+            const notification = document.getElementById('notification');
+            notification.innerHTML = `
+                <div class="${colors[type]} border rounded-lg shadow-lg p-4">
+                    <div class="flex items-start gap-3">
+                        <span class="text-xl">${icons[type]}</span>
+                        <div class="flex-1">
+                            <p class="font-medium text-sm">${message}</p>
+                        </div>
+                        <button onclick="hideNotification()" class="text-current opacity-50 hover:opacity-100 transition-opacity">
+                            <span class="text-xl">×</span>
+                        </button>
+                    </div>
+                </div>
+            `;
+            notification.classList.add('show');
+            setTimeout(() => hideNotification(), 5000);
         }
 
-        // Process mermaid diagrams after content is rendered
+        function hideNotification() {
+            document.getElementById('notification').classList.remove('show');
+        }
+
+        function updateStatus(message) {
+            document.getElementById('statusText').textContent = message;
+        }
+
+        function switchTab(tab) {
+            const uploadTab = document.getElementById('uploadTab');
+            const pasteTab = document.getElementById('pasteTab');
+            const uploadSection = document.getElementById('uploadSection');
+            const pasteSection = document.getElementById('pasteSection');
+
+            if (tab === 'upload') {
+                uploadTab.className = 'tab-active py-3 px-1 text-sm transition-all';
+                pasteTab.className = 'tab-inactive py-3 px-1 text-sm transition-all';
+                uploadSection.classList.remove('hidden');
+                pasteSection.classList.add('hidden');
+            } else {
+                uploadTab.className = 'tab-inactive py-3 px-1 text-sm transition-all';
+                pasteTab.className = 'tab-active py-3 px-1 text-sm transition-all';
+                uploadSection.classList.add('hidden');
+                pasteSection.classList.remove('hidden');
+            }
+        }
+
         async function processMermaidDiagrams() {
             const mermaidElements = document.querySelectorAll('.mermaid');
             
             for (let i = 0; i < mermaidElements.length; i++) {
                 const element = mermaidElements[i];
                 try {
-                    // Get the original source code
                     let code;
                     const sourceAttr = element.getAttribute('data-mermaid-source');
                     
@@ -380,115 +310,134 @@
                         code = mermaidDiagrams.get(element.id);
                     } else {
                         const textContent = element.textContent.trim();
-                        if (textContent && !textContent.includes('<') && !textContent.includes('#mermaid-diagram')) {
+                        if (textContent && !textContent.includes('<')) {
                             code = textContent;
                         } else {
                             throw new Error('No valid diagram source found');
                         }
                     }
                     
-                    if (!code || code.includes('#mermaid-diagram') || code.includes('font-family')) {
-                        throw new Error('Invalid or corrupted diagram source');
-                    }
-                    
                     const renderId = `mermaid-render-${Date.now()}-${i}`;
-                    const { svg, bindFunctions } = await mermaid.render(renderId, code);
-                    
+                    const { svg } = await mermaid.render(renderId, code);
                     element.innerHTML = svg;
                     
-                    if (bindFunctions) {
-                        bindFunctions(element);
-                    }
-                    
                 } catch (error) {
-                    console.error('Mermaid rendering error for element:', element.id, error);
-                    element.innerHTML = `<div class="mermaid-error">
+                    console.error('Mermaid rendering error:', error);
+                    element.innerHTML = `<div class="bg-[#ffebe9] border border-[#cf222e] text-[#a40e26] p-4 rounded-lg text-sm">
                         <strong>Diagram Rendering Error</strong><br>
-                        ${error.message || 'Failed to render diagram'}<br>
-                        <small>Please check your diagram syntax</small>
+                        ${error.message || 'Failed to render diagram'}
                     </div>`;
                 }
             }
         }
 
-        // Store original mermaid source in existing diagrams
-        function storeMermaidSources() {
-            const mermaidElements = document.querySelectorAll('.mermaid[data-mermaid-source]');
-            mermaidElements.forEach(element => {
-                if (element.id && element.getAttribute('data-mermaid-source')) {
-                    const source = decodeURIComponent(element.getAttribute('data-mermaid-source'));
-                    mermaidDiagrams.set(element.id, source);
-                }
-            });
-        }
-
-        // Handle file selection
         async function handleFile(file) {
             if (!file) return;
             
             if (!file.name.match(/\.(md|markdown)$/i)) {
-                updateStatus('Please select a valid markdown file (.md)', 'error');
+                showNotification('Please select a valid markdown file (.md)', 'error');
                 return;
             }
 
-            fileInfo.textContent = `📄 ${file.name}`;
-            updateStatus('Loading file...', 'loading');
+            document.getElementById('fileInfo').textContent = `📄 ${file.name}`;
+            updateStatus('Loading file...');
 
             const reader = new FileReader();
             
             reader.onload = async function(e) {
                 try {
                     const markdownText = e.target.result;
-                    
-                    // Reset mermaid counter and storage for new file
                     mermaidCounter = 0;
                     mermaidDiagrams.clear();
                     
-                    // Parse markdown
                     const html = marked.parse(markdownText);
-                    markdownContent.innerHTML = html;
+                    document.getElementById('markdownContent').innerHTML = html;
                     
-                    // Check if there are any mermaid diagrams to process
-                    const mermaidElements = markdownContent.querySelectorAll('.mermaid');
+                    const mermaidElements = document.querySelectorAll('.mermaid');
                     if (mermaidElements.length > 0) {
-                        updateStatus('Processing diagrams...', 'loading');
+                        updateStatus('Processing diagrams...');
                         setTimeout(async () => {
                             try {
                                 await processMermaidDiagrams();
-                                updateStatus(`Successfully loaded with ${mermaidElements.length} diagram(s)`, 'success');
+                                updateStatus(`Successfully loaded with ${mermaidElements.length} diagram(s)`);
+                                showNotification(`File loaded with ${mermaidElements.length} diagram(s)`, 'success');
                             } catch (error) {
-                                console.error('Mermaid processing error:', error);
-                                updateStatus('File loaded - Some diagrams failed to render', 'error');
+                                updateStatus('File loaded - Some diagrams failed to render');
+                                showNotification('Some diagrams failed to render', 'warning');
                             }
                         }, 50);
                     } else {
-                        updateStatus('File loaded successfully', 'success');
+                        updateStatus('File loaded successfully');
+                        showNotification('File loaded successfully', 'success');
                     }
                 } catch (error) {
-                    updateStatus(`Error processing file: ${error.message}`, 'error');
-                    console.error('File processing error:', error);
+                    updateStatus('Error processing file');
+                    showNotification(`Error: ${error.message}`, 'error');
                 }
             };
 
             reader.onerror = function() {
-                updateStatus('Error reading file', 'error');
+                updateStatus('Error reading file');
+                showNotification('Error reading file', 'error');
             };
 
             reader.readAsText(file);
         }
 
-        // File input change handler - prevent multiple triggers
+        async function renderPastedMarkdown() {
+            const markdownInput = document.getElementById('markdownInput');
+            const markdownText = markdownInput.value.trim();
+            
+            if (!markdownText) {
+                showNotification('Please enter some markdown content', 'warning');
+                return;
+            }
+
+            try {
+                mermaidCounter = 0;
+                mermaidDiagrams.clear();
+                
+                const html = marked.parse(markdownText);
+                document.getElementById('markdownContent').innerHTML = html;
+                
+                const mermaidElements = document.querySelectorAll('.mermaid');
+                if (mermaidElements.length > 0) {
+                    updateStatus('Processing diagrams...');
+                    setTimeout(async () => {
+                        try {
+                            await processMermaidDiagrams();
+                            updateStatus(`Rendered with ${mermaidElements.length} diagram(s)`);
+                            showNotification('Markdown rendered successfully', 'success');
+                        } catch (error) {
+                            updateStatus('Rendered - Some diagrams failed');
+                            showNotification('Some diagrams failed to render', 'warning');
+                        }
+                    }, 50);
+                } else {
+                    updateStatus('Markdown rendered successfully');
+                    showNotification('Markdown rendered successfully', 'success');
+                }
+            } catch (error) {
+                updateStatus('Error rendering markdown');
+                showNotification(`Error: ${error.message}`, 'error');
+            }
+        }
+
+        function clearMarkdownInput() {
+            document.getElementById('markdownInput').value = '';
+            showNotification('Input cleared', 'info');
+        }
+
+        const fileInput = document.getElementById('fileInput');
+        const uploadArea = document.getElementById('uploadArea');
+
         fileInput.addEventListener('change', function(e) {
             e.stopPropagation();
             const file = e.target.files[0];
-            if (file) {
-                handleFile(file);
-            }
+            if (file) handleFile(file);
         });
 
-        // Upload area click handler - only trigger file input
         uploadArea.addEventListener('click', function(e) {
-            // Only trigger if we didn't click the input itself
             if (e.target !== fileInput) {
                 e.preventDefault();
                 e.stopPropagation();
@@ -496,7 +445,6 @@
             }
         });
 
-        // Drag and drop handlers
         uploadArea.addEventListener('dragover', function(e) {
             e.preventDefault();
             e.stopPropagation();
@@ -506,7 +454,6 @@
         uploadArea.addEventListener('dragleave', function(e) {
             e.preventDefault();
             e.stopPropagation();
-            // Only remove dragover if we're actually leaving the upload area
             if (!uploadArea.contains(e.relatedTarget)) {
                 uploadArea.classList.remove('dragover');
             }
@@ -519,34 +466,26 @@
             
             const files = e.dataTransfer.files;
             if (files.length > 0) {
-                const file = files[0];
-                // Set the file input value and trigger file handling
                 fileInput.files = files;
-                handleFile(file);
+                handleFile(files[0]);
             }
         });
 
-        // Prevent default drag behavior on the document
-        document.addEventListener('dragover', function(e) {
-            e.preventDefault();
+        document.addEventListener('dragover', e => e.preventDefault());
+        document.addEventListener('drop', e => e.preventDefault());
+
+        // Enter key to render in textarea
+        document.getElementById('markdownInput').addEventListener('keydown', function(e) {
+            if (e.ctrlKey && e.key === 'Enter') {
+                renderPastedMarkdown();
+            }
         });
 
-        document.addEventListener('drop', function(e) {
-            e.preventDefault();
-        });
-
-        // Initialize with sample mermaid diagram
         window.addEventListener('load', async function() {
-            try {
-                storeMermaidSources();
-                setTimeout(async () => {
-                    await processMermaidDiagrams();
-                    updateStatus('Ready to load markdown files', 'success');
-                }, 100);
-            } catch (error) {
-                console.error('Initial Mermaid processing error:', error);
-                updateStatus('Ready to load markdown files', 'success');
-            }
+            setTimeout(async () => {
+                await processMermaidDiagrams();
+                updateStatus('Ready to load markdown files');
+            }, 100);
         });
     </script>
 </body>
